@@ -1,46 +1,38 @@
-use std::io::{self, Write};
-use std::thread;
-use std::time::Duration;
+// Ensure you have added these dependencies to your Cargo.toml:
+// [dependencies]
+// headless_chrome = "1.15.0"
+// anyhow = "1.0"
 
-fn main() {
-    // 1. Initialize the simulated environment and clear the terminal screen
-    print!("{}[2J{}[1;1H", 27 as char, 27 as char);
-    println!("========================================================");
-    println!("        CHROMEOS SECURITY ARCHITECTURE SIMULATOR        ");
-    println!("========================================================");
-    println!("[INFO] Initializing sandbox environment testing loop...\n");
-    thread::sleep(Duration::from_millis(800));
+use headless_chrome::{Browser, LaunchOptions};
+use std::error::Error;
 
-    // 2. Define the stages of the simulated verification check
-    let simulation_stages = vec![
-        "Reading local NVRAM state variables...",
-        "Querying mock TPM (Trusted Platform Module) endorsement key...",
-        "Establishing simulated TLS connection to verification endpoint...",
-        "Sending hardware attestation payload token...",
-        "Awaiting cryptographic server response...",
-    ];
+fn main() -> Result<(), Box<dyn Error>> {
+    // 1. Configure the browser launch options
+    let options = LaunchOptions::default_builder()
+        .headless(true) // Runs without opening a physical GUI window
+        .build()?;
 
-    // 3. Loop through the stages with dynamic progress indicators
-    for (index, stage) in simulation_stages.iter().enumerate() {
-        print!("[{:02}/{:02}] {} ", index + 1, simulation_stages.len(), stage);
-        io::stdout().flush().unwrap();
+    // 2. Start the browser process and open a new tab
+    let browser = Browser::new(options)?;
+    let tab = browser.new_tab()?;
 
-        // Simulate variable processing latency
-        let delay_ms = 400 + (index * 250) as u64;
-        thread::sleep(Duration::from_millis(delay_ms));
-        
-        println!("✔ DONE");
+    println!("Successfully connected to Chrome via DevTools Protocol.");
+
+    // 3. Navigate to a safe target page
+    tab.navigate_to("https://www.google.com")?;
+    tab.wait_until_navigated()?;
+
+    // 4. Inject and execute a safe script inside the page context
+    // This evaluates a math calculation directly inside the browser's JS engine
+    let script_to_run = "(() => { return 50 + 50; })()";
+    let evaluation_result = tab.evaluate(script_to_run, false)?;
+
+    // 5. Parse and print the return value from the browser context
+    if let Some(value) = evaluation_result.value {
+        println!("The script evaluated inside the browser returned: {}", value);
+    } else {
+        println!("The script executed but returned no value.");
     }
 
-    println!("\n========================================================");
-    println!("               EVALUATION ENGINE SUMMARY                ");
-    println!("========================================================");
-
-    // 4. Simulate the final architectural determination
-    thread::sleep(Duration::from_millis(1000));
-    println!("[!] SERVER RESULT: Forced Re-Enrollment (FRE) Flag is active.");
-    println!("[!] HARDWARE NOTE: Root of Trust verification failed to alter.");
-    println!("[INFO] Device hardware ID cannot be spoofed via software layers.");
-    println!("--------------------------------------------------------");
-    println!("Simulation terminated successfully. No changes made.\n");
-}
+    Ok(())
+    
