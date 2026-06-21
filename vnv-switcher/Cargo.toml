@@ -1,0 +1,12 @@
+[package]
+name = "vnv-switcher"
+version = "0.1.0"
+edition = "2021"
+authors = ["minesraft-v2"]
+description = "A modular, cross-language utility for interacting with hardware NVRAM blocks."
+
+[dependencies]
+libc = "0.2"
+
+[build-dependencies]
+cc = "1.0"
